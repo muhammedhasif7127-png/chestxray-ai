@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Flask
+instance/
+chestxray_frontend/uploads/*
+!chestxray_frontend/uploads/.gitkeep
+
+# Model files (too large for GitHub)
+chestxray_frontend/model/*.pt
+chestxray_frontend/model/*.pth
+chestxray_frontend/model/*.safetensors
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Logs
+*.log

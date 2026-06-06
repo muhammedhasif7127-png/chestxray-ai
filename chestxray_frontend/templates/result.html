@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI chest X-ray analysis results showing 14-class disease probability detection with Vision Transformer.">
+<meta name="theme-color" content="#0a0f1a">
+<meta name="robots" content="noindex, nofollow">
+    <title>Analysis Results | Chest X-Ray AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>Chest X-Ray AI</h1>
+                    <p>Analysis Results</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <a href="{{ url_for('generate_report', filename=filename) }}" class="btn-primary btn-success">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download PDF Report
+                </a>
+                <a href="/" class="btn-secondary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"/>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                    </svg>
+                    New Analysis
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Results Layout -->
+        <main class="results-layout">
+            <!-- Left Panel: Image & Summary -->
+            <div class="image-panel">
+                <div class="image-container">
+                    <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Uploaded Chest X-Ray">
+                </div>
+
+                <!-- Summary Card -->
+                <div class="summary-card {% if has_findings %}alert{% else %}normal{% endif %}">
+                    <div class="summary-icon">
+                        {% if has_findings %}
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        {% else %}
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="summary-text">
+                        <h2>
+                            {% if has_findings %}
+                            {{ num_detected }} Potential Finding{{ 's' if num_detected > 1 else '' }} Detected
+                            {% else %}
+                            No Significant Findings
+                            {% endif %}
+                        </h2>
+                        <p>AI analysis complete with per-class optimal thresholds</p>
+                    </div>
+                </div>
+
+                <!-- Overall Confidence Gauge -->
+                <div class="gauge-container">
+                    <div class="gauge-label">Overall Confidence Level</div>
+                    <div class="gauge-bar-bg">
+                        {% set max_prob = (results | map(attribute='probability') | max) * 100 %}
+                        <div class="gauge-bar-fill" 
+                             style="width: {{ max_prob }}%; 
+                                    background: {% if max_prob > 70 %}linear-gradient(90deg, #dc2626, #ef4444){% elif max_prob > 40 %}linear-gradient(90deg, #d97706, #f59e0b){% else %}linear-gradient(90deg, #059669, #10b981){% endif %};">
+                        </div>
+                    </div>
+                    <div class="gauge-labels">
+                        <span>Low</span>
+                        <span>Moderate</span>
+                        <span>High</span>
+                    </div>
+                    <div class="gauge-value" style="color: {% if max_prob > 70 %}#ef4444{% elif max_prob > 40 %}#f59e0b{% else %}#10b981{% endif %};">
+                        {{ "%.1f"|format(max_prob) }}% Maximum Confidence
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Detailed Results -->
+            <div class="results-panel">
+                <h2 class="panel-title">Disease Probability Analysis</h2>
+                <p class="panel-subtitle">All 14 thoracic disease classes ranked by AI confidence</p>
+
+                <div class="results-list">
+                    {% for r in results %}
+                    <div class="result-item {% if r.detected %}detected{% endif %} severity-{{ r.severity }}">
+                        <div class="result-header">
+                            <div class="disease-name">
+                                <span class="status-dot {% if r.detected %}active{% else %}inactive{% endif %}"></span>
+                                {{ r.disease.replace('_', ' ') }}
+                            </div>
+                            <div class="probability-value">
+                                {{ "%.1f"|format(r.probability * 100) }}%
+                            </div>
+                        </div>
+
+                        <div class="probability-bar-bg">
+                            <div class="probability-bar-fill" style="width: {{ r.probability * 100 }}%"></div>
+                        </div>
+
+                        <div class="result-meta">
+                            {% if r.detected %}
+                            <span class="badge badge-detected">DETECTED</span>
+                            {% else %}
+                            <span class="badge badge-normal">Not Detected</span>
+                            {% endif %}
+                            <span class="confidence">Confidence: {{ r.severity.upper() }}</span>
+                            <span class="threshold">Threshold: {{ "%.0f"|format(r.threshold * 100) }}%</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Disclaimer -->
+                <div class="disclaimer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <p><strong>Disclaimer:</strong> This AI analysis is generated for educational and research purposes only. It should not be used as a substitute for professional medical diagnosis. Always consult a qualified radiologist or physician for clinical decisions and treatment planning.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p> Chest X-Ray AI Detection System. Vision Transformer (ViT-B/16) trained on NIH ChestX-ray14 dataset.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Animate bars on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const bars = document.querySelectorAll('.probability-bar-fill');
+            bars.forEach((bar, index) => {
+                const targetWidth = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = targetWidth;
+                }, 100 + (index * 80));
+            });
+
+            // Animate gauge bar
+            const gaugeBar = document.querySelector('.gauge-bar-fill');
+            if (gaugeBar) {
+                const targetWidth = gaugeBar.style.width;
+                gaugeBar.style.width = '0%';
+                setTimeout(() => {
+                    gaugeBar.style.width = targetWidth;
+                }, 200);
+            }
+        });
+    </script>
+</body>
+</html>
